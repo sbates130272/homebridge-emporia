@@ -8,21 +8,21 @@
       "name": {
         "title": "Platform Name",
         "type": "string",
-        "default": "Emporia Energy",
-        "required": true
+        "default": "Emporia Energy"
       },
       "username": {
         "title": "Emporia Email",
         "type": "string",
-        "required": true,
         "format": "email",
         "description": "Your Emporia Energy account email address"
       },
       "password": {
         "title": "Emporia Password",
         "type": "string",
-        "required": true,
-        "description": "Your Emporia Energy account password"
+        "description": "Your Emporia Energy account password",
+        "x-schema-form": {
+          "type": "password"
+        }
       },
       "updateInterval": {
         "title": "Update Interval (seconds)",
@@ -65,7 +65,6 @@
             "deviceGid": {
               "title": "Device ID (GID)",
               "type": "integer",
-              "required": true,
               "description": "The device GID from Emporia (visible in logs)"
             },
             "name": {
@@ -79,23 +78,35 @@
               "default": false,
               "description": "Hide this device from HomeKit"
             }
-          }
+          },
+          "required": [
+            "deviceGid"
+          ]
         }
       }
     },
-    "required": ["name", "username", "password"]
+    "required": [
+      "name",
+      "username",
+      "password"
+    ]
   },
   "layout": [
     {
       "type": "flex",
       "flex-flow": "row wrap",
-      "items": ["name"]
+      "items": [
+        "name"
+      ]
     },
     {
       "type": "fieldset",
       "title": "Emporia Account",
       "expandable": false,
-      "items": ["username", "password"]
+      "items": [
+        "username",
+        "password"
+      ]
     },
     {
       "type": "fieldset",
@@ -113,7 +124,10 @@
       "title": "Advanced Settings",
       "expandable": true,
       "expanded": false,
-      "items": ["updateInterval", "debug"]
+      "items": [
+        "updateInterval",
+        "debug"
+      ]
     },
     {
       "type": "fieldset",

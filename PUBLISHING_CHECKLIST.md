@@ -1,4 +1,4 @@
-# Publishing Checklist for homebridge-plugin-emporia
+# Publishing Checklist for homebridge-emporia
 
 This checklist covers all requirements before publishing to npm and getting Homebridge verified status.
 
@@ -6,13 +6,13 @@ This checklist covers all requirements before publishing to npm and getting Home
 
 ### 1. Package.json Requirements
 
-- [x] **Name**: Must start with `homebridge-` ✅ (`homebridge-plugin-emporia`)
+- [x] **Name**: Must start with `homebridge-` ✅ (`homebridge-emporia`)
 - [ ] **Version**: Semantic versioning (start with `1.0.0`)
 - [x] **Description**: Clear, concise description ✅
 - [x] **Keywords**: Must include `homebridge-plugin` ✅
 - [ ] **Repository**: Update from `yourusername` to actual repo URL
-  - Current: `https://github.com/yourusername/homebridge-plugin-emporia.git`
-  - Should be: `https://github.com/sbates130272/homebridge-plugin-emporia.git`
+  - Current: `https://github.com/yourusername/homebridge-emporia.git`
+  - Should be: `https://github.com/sbates130272/homebridge-emporia.git`
 - [ ] **Bugs URL**: Update to actual repo
 - [x] **Author**: Set ✅
 - [x] **License**: MIT ✅
@@ -220,14 +220,14 @@ git push origin main --follow-tags
 
 # 7. Test package locally
 npm pack
-npm install -g homebridge-plugin-emporia-1.0.0.tgz
+npm install -g homebridge-emporia-1.0.0.tgz
 # Test in real Homebridge
 
 # 8. Publish to npm
 npm publish
 
 # 9. Verify on npm
-# Visit: https://www.npmjs.com/package/homebridge-plugin-emporia
+# Visit: https://www.npmjs.com/package/homebridge-emporia
 
 # 10. Apply for Homebridge verification (after 100+ downloads)
 # https://github.com/homebridge/homebridge/wiki/Verified-Plugins

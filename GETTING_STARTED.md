@@ -37,8 +37,8 @@ nvm use 20
 ### 2. Clone and Install Dependencies
 
 ```bash
-git clone https://github.com/yourusername/homebridge-plugin-emporia.git
-cd homebridge-plugin-emporia
+git clone https://github.com/yourusername/homebridge-emporia.git
+cd homebridge-emporia
 npm install
 ```
 
@@ -51,7 +51,7 @@ npm run build
 You should see output like:
 
 ```
-> homebridge-plugin-emporia@1.0.0 build
+> homebridge-emporia@1.0.0 build
 > tsc
 
 ✨  Done in 2.34s

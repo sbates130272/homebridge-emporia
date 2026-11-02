@@ -83,7 +83,7 @@ case "$ACTION" in
     
     build)
         info "Building plugin in container..."
-        $DOCKER_COMPOSE exec homebridge bash -c "cd /tmp/homebridge-plugin-emporia && npm run build"
+        $DOCKER_COMPOSE exec homebridge bash -c "cd /tmp/homebridge-emporia && npm run build"
         info "Build complete."
         ;;
     

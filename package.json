@@ -1,7 +1,7 @@
 {
-  "name": "homebridge-plugin-emporia",
+  "name": "homebridge-emporia",
   "displayName": "Homebridge Emporia Energy",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Homebridge plugin for Emporia Vue energy monitoring devices including smart outlets and EV chargers",
   "main": "dist/index.js",
   "type": "module",
@@ -13,8 +13,16 @@
     "lint:fix": "eslint . --fix",
     "test": "echo \"Tests not implemented yet\" && exit 0"
   },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
   "keywords": [
     "homebridge-plugin",
+    "supports-hap",
     "emporia",
     "emporia-vue",
     "energy-monitoring",
@@ -26,17 +34,17 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sbates130272/homebridge-plugin-emporia.git"
+    "url": "git+https://github.com/sbates130272/homebridge-emporia.git"
   },
   "bugs": {
-    "url": "https://github.com/sbates130272/homebridge-plugin-emporia/issues"
+    "url": "https://github.com/sbates130272/homebridge-emporia/issues"
   },
-  "homepage": "https://github.com/sbates130272/homebridge-plugin-emporia#readme",
+  "homepage": "https://github.com/sbates130272/homebridge-emporia#readme",
   "author": "Stephen Bates",
   "license": "MIT",
   "engines": {
-    "homebridge": ">=1.8.0",
-    "node": ">=18.0.0"
+    "homebridge": "^1.8.0 || ^2.0.0",
+    "node": "^20.18.0 || ^22.10.0 || ^24.0.0"
   },
   "dependencies": {
     "amazon-cognito-identity-js": "^6.3.12",

@@ -33,7 +33,9 @@
     "kwh",
     "KWH",
     "Kwh",
-    "Amps"
+    "Amps",
+    "Siri",
+    "automations"
   ],
   "ignorePaths": [
     "node_modules/**",
