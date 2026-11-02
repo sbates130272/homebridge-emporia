@@ -7,6 +7,37 @@ https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](
 https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-11-02
+
+### Added
+- Outlets now publish instantaneous power and cumulative energy using
+  Eve's `Consumption` (W) and `Total Consumption` (kWh) characteristics,
+  when `exposeEnergyMonitoring` is on.
+
+  **Apple's Home app will not show these.** HomeKit defines no
+  characteristic for electrical power on an outlet, so there is nothing
+  standard to publish it on; Eve's UUIDs are the de facto convention and
+  are read by Eve, Controller for HomeKit and Home+. No plugin can make
+  watts appear in Apple Home.
+
+### Fixed
+- **Outlets were always named `Emporia Outlet <gid>`.** `getDevices()`
+  read `customerDevices` from `/customers/devices`, but the payload key
+  is `devices`, so it had always returned an empty array. The name was
+  being fetched and thrown away. Outlets now take their Emporia device
+  name, and a rename in the Emporia app follows through on restart.
+- `OutletInUse` was effectively always false. It is derived from
+  `currentPower`, which was only set by a per-accessory usage call that
+  was not reliably returning data — an outlet drawing 135 W reported
+  itself as not in use.
+- Energy monitoring made one API request per outlet per poll (eight
+  every 30 s here). `getDeviceListUsages` accepts a comma-separated
+  `deviceGids`, so the platform now fetches all of them in one request
+  and the accessories read from a shared cache. This is what
+  `emvue-exporter` does.
+- `updateAllDevices()` was an empty method that the poll timer called
+  every interval; it now owns that shared refresh.
+
 ## [1.1.0] - 2026-11-02
 
 ### Added

@@ -11,6 +11,10 @@ import type {
 import { EmporiaOutletAccessory } from './outletAccessory.js';
 import { EmporiaChargerAccessory } from './chargerAccessory.js';
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js';
+import {
+  createEveCharacteristics,
+  type EveCharacteristics,
+} from './eveCharacteristics.js';
 import { EmporiaApi, EmporiaTokens } from './emporiaApi.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -50,6 +54,12 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
   private updateInterval?: NodeJS.Timeout;
   private readonly tokensFile: string;
 
+  /** Shared instantaneous power, gid -> watts. Filled by updateAllDevices. */
+  private powerByGid = new Map<number, number>();
+
+  /** Eve power characteristics, built once against the running hap. */
+  public readonly eve: EveCharacteristics;
+
   constructor(
     public readonly log: Logging,
     public readonly config: EmporiaPlatformConfig,
@@ -57,6 +67,7 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
   ) {
     this.Service = homebridgeApi.hap.Service;
     this.Characteristic = homebridgeApi.hap.Characteristic;
+    this.eve = createEveCharacteristics(homebridgeApi);
 
     // Initialize Emporia API client
     this.api = new EmporiaApi(log);
@@ -136,6 +147,9 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
         // Save tokens
         fs.writeFileSync(this.tokensFile, JSON.stringify(tokens, null, 2));
       }
+
+      // Names first: discoverDevices() reads them off the outlets.
+      await this.api.refreshDeviceNames();
 
       // Discover devices
       await this.discoverDevices();
@@ -299,13 +313,37 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Update all devices with latest data
+   * Refresh the shared power cache.
+   *
+   * One request covers every outlet, so this lives here rather than in the
+   * accessories: they poll independently, and a per-accessory usage call
+   * meant eight requests per cycle for data a single request returns.
    */
   private async updateAllDevices(): Promise<void> {
-    if (this.config.debug) {
-      this.log.debug('Updating all devices...');
+    if (this.config.exposeEnergyMonitoring !== true) {
+      return;
     }
-    // Device accessories will handle their own updates via polling
+
+    const gids = [...this.accessories.values()]
+      .map((accessory) => accessory.context.device?.deviceGid)
+      .filter((gid): gid is number => typeof gid === 'number');
+
+    try {
+      this.powerByGid = await this.api.getPowerByGid(gids);
+      if (this.config.debug) {
+        this.log.debug(`Refreshed power for ${this.powerByGid.size} device(s)`);
+      }
+    } catch (error) {
+      // Usage is best-effort: a failure here must not disturb on/off state.
+      this.log.debug('Could not refresh power usage:', error);
+    }
+  }
+
+  /**
+   * Latest known watts for a device, or undefined if not yet polled.
+   */
+  getPower(deviceGid: number): number | undefined {
+    return this.powerByGid.get(deviceGid);
   }
 
   /**
