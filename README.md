@@ -1,8 +1,8 @@
 
 # Homebridge Emporia Energy Plugin
 
-[![npm version](https://badge.fury.io/js/homebridge-plugin-emporia.svg)](https://badge.fury.io/js/homebridge-plugin-emporia)
-[![CI](https://github.com/sbates130272/homebridge-plugin-emporia/actions/workflows/ci.yml/badge.svg)](https://github.com/sbates130272/homebridge-plugin-emporia/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/homebridge-emporia.svg)](https://badge.fury.io/js/homebridge-emporia)
+[![CI](https://github.com/sbates130272/homebridge-emporia/actions/workflows/ci.yml/badge.svg)](https://github.com/sbates130272/homebridge-emporia/actions/workflows/ci.yml)
 
 A [Homebridge](https://homebridge.io) plugin that integrates 
 [Emporia Vue](https://emporiaenergy.com) energy monitoring devices with 
@@ -33,14 +33,14 @@ into your HomeKit ecosystem.
 ### Via Homebridge UI (Recommended)
 
 1. Search for "Emporia" in the Homebridge UI plugin search
-2. Install "homebridge-plugin-emporia"
+2. Install "homebridge-emporia"
 3. Configure with your Emporia account credentials
 4. Restart Homebridge
 
 ### Via NPM
 
 ```bash
-npm install -g homebridge-plugin-emporia
+npm install -g homebridge-emporia
 ```
 
 ### Via Docker
@@ -207,8 +207,8 @@ development and testing.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/sbates130272/homebridge-plugin-emporia.git
-cd homebridge-plugin-emporia
+git clone https://github.com/sbates130272/homebridge-emporia.git
+cd homebridge-emporia
 ```
 
 2. Update test configuration:
@@ -386,9 +386,9 @@ your devices or data.
 ## Support
 
 - **Issues**: Report bugs or request features on 
-  [GitHub Issues](https://github.com/sbates130272/homebridge-plugin-emporia/issues)
+  [GitHub Issues](https://github.com/sbates130272/homebridge-emporia/issues)
 - **Discussions**: Ask questions on 
-  [GitHub Discussions](https://github.com/sbates130272/homebridge-plugin-emporia/discussions)
+  [GitHub Discussions](https://github.com/sbates130272/homebridge-emporia/discussions)
 
 ## Changelog
 

@@ -15,7 +15,7 @@ Homebridge Emporia Energy plugin.
 ## Project Structure
 
 ```
-homebridge-plugin-emporia/
+homebridge-emporia/
 ├── src/
 │   ├── index.ts              # Plugin entry point
 │   ├── platform.ts           # Main platform implementation
@@ -46,8 +46,8 @@ homebridge-plugin-emporia/
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/yourusername/homebridge-plugin-emporia.git
-cd homebridge-plugin-emporia
+git clone https://github.com/yourusername/homebridge-emporia.git
+cd homebridge-emporia
 npm install
 ```
 
@@ -361,7 +361,7 @@ npm install
 
 - Check Homebridge logs for errors
 - Verify `dist/index.js` exists
-- Check plugin is installed: `npm list -g homebridge-plugin-emporia`
+- Check plugin is installed: `npm list -g homebridge-emporia`
 
 **Problem**: API authentication failing
 

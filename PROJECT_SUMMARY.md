@@ -221,7 +221,7 @@ complete testing infrastructure, and CI/CD pipelines.
 ## File Structure
 
 ```
-homebridge-plugin-emporia/
+homebridge-emporia/
 ├── src/                          # TypeScript source code
 │   ├── index.ts                 # Plugin entry point
 │   ├── platform.ts              # Main platform

@@ -7,7 +7,7 @@
   },
   "description": "Homebridge Emporia Energy Test Configuration",
   "plugins": [
-    "homebridge-plugin-emporia",
+    "homebridge-emporia",
     "homebridge-config-ui-x"
   ],
   "platforms": [

@@ -1,4 +1,4 @@
-# Publishing Guide for homebridge-plugin-emporia
+# Publishing Guide for homebridge-emporia
 
 Complete step-by-step guide to publish this plugin to npm and get Homebridge verification.
 
@@ -99,13 +99,13 @@ git push origin main --follow-tags
 # Create tarball
 npm pack
 
-# This creates: homebridge-plugin-emporia-1.0.0.tgz
+# This creates: homebridge-emporia-1.0.0.tgz
 ```
 
 ### B. Test Installation
 ```bash
 # Install globally from tarball
-npm install -g homebridge-plugin-emporia-1.0.0.tgz
+npm install -g homebridge-emporia-1.0.0.tgz
 
 # Verify it works
 homebridge -D
@@ -117,10 +117,10 @@ homebridge -D
 ### C. Test Uninstall/Reinstall
 ```bash
 # Uninstall
-npm uninstall -g homebridge-plugin-emporia
+npm uninstall -g homebridge-emporia
 
 # Reinstall
-npm install -g homebridge-plugin-emporia-1.0.0.tgz
+npm install -g homebridge-emporia-1.0.0.tgz
 
 # Verify devices persist correctly
 ```
@@ -186,7 +186,7 @@ npm publish --access public
 ```
 
 ### C. Verify Publication
-1. Visit: https://www.npmjs.com/package/homebridge-plugin-emporia
+1. Visit: https://www.npmjs.com/package/homebridge-emporia
 2. Check package page loads
 3. Verify README displays correctly
 4. Check version number is correct
@@ -198,10 +198,10 @@ npm publish --access public
 ### A. Test Installation
 ```bash
 # Uninstall local version
-npm uninstall -g homebridge-plugin-emporia
+npm uninstall -g homebridge-emporia
 
 # Install from npm
-npm install -g homebridge-plugin-emporia
+npm install -g homebridge-emporia
 
 # Verify it works
 homebridge -D
@@ -213,7 +213,7 @@ homebridge -D
 docker run --rm -it oznu/homebridge:latest bash
 
 # Inside container:
-npm install -g homebridge-plugin-emporia
+npm install -g homebridge-emporia
 # Should install successfully
 ```
 
@@ -227,11 +227,11 @@ npm install -g homebridge-plugin-emporia
 # The badge should now show v1.0.0
 
 # Create GitHub Release
-# Go to: https://github.com/sbates130272/homebridge-plugin-emporia/releases/new
+# Go to: https://github.com/sbates130272/homebridge-emporia/releases/new
 # - Tag: v1.0.0
 # - Title: v1.0.0 - Initial Release
 # - Description: Copy from CHANGELOG.md
-# - Attach: homebridge-plugin-emporia-1.0.0.tgz
+# - Attach: homebridge-emporia-1.0.0.tgz
 ```
 
 ### B. Announce
@@ -285,7 +285,7 @@ npm publish --access public
 
 ### "Package name taken"
 ```bash
-# If someone else has homebridge-plugin-emporia:
+# If someone else has homebridge-emporia:
 # Change name in package.json
 # Suggestions:
 #   - homebridge-emporia-vue
@@ -366,7 +366,7 @@ git tag -a v1.0.0 -m "Release v1.0.0"
 
 # 4. Test package
 npm pack
-npm install -g homebridge-plugin-emporia-1.0.0.tgz
+npm install -g homebridge-emporia-1.0.0.tgz
 # Test it works
 
 # 5. Login to npm
@@ -401,7 +401,7 @@ git push origin main --follow-tags
 - Update troubleshooting with common issues
 
 ### Monitoring:
-- Watch npm download stats: https://npm-stat.com/charts.html?package=homebridge-plugin-emporia
+- Watch npm download stats: https://npm-stat.com/charts.html?package=homebridge-emporia
 - Check Homebridge verified status
 - Monitor GitHub stars/issues
 

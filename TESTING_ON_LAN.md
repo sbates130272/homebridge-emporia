@@ -23,12 +23,12 @@ ssh homebridge
 
 # Clone the repository (adjust path as needed)
 cd ~/Projects  # or just ~
-git clone https://github.com/sbates130272/homebridge-plugin-emporia.git
+git clone https://github.com/sbates130272/homebridge-emporia.git
 
 # Or if using SSH keys:
-# git clone git@github.com:sbates130272/homebridge-plugin-emporia.git
+# git clone git@github.com:sbates130272/homebridge-emporia.git
 
-cd homebridge-plugin-emporia
+cd homebridge-emporia
 ```
 
 ### Step 2: Build on Server
@@ -53,13 +53,13 @@ npm pack
 ```bash
 # For Homebridge Config UI X (--strict-plugin-resolution):
 cd /var/lib/homebridge
-sudo npm install ~/Projects/homebridge-plugin-emporia/homebridge-plugin-emporia-1.0.0.tgz
+sudo npm install ~/Projects/homebridge-emporia/homebridge-emporia-1.0.0.tgz
 
 # Verify it's installed
 ls -la /var/lib/homebridge/node_modules/ | grep emporia
 
 # For standard Homebridge (without Config UI X):
-# sudo npm install -g ~/Projects/homebridge-plugin-emporia/homebridge-plugin-emporia-1.0.0.tgz
+# sudo npm install -g ~/Projects/homebridge-emporia/homebridge-emporia-1.0.0.tgz
 ```
 
 ### Step 4: Configure the Plugin
@@ -116,8 +116,8 @@ sudo systemctl status homebridge
 sudo journalctl -u homebridge -f
 
 # Look for:
-# - "Loaded plugin: homebridge-plugin-emporia@1.0.0"
-# - "Registering platform 'homebridge-plugin-emporia.EmporiaEnergy'"
+# - "Loaded plugin: homebridge-emporia@1.0.0"
+# - "Registering platform 'homebridge-emporia.EmporiaEnergy'"
 # - "[Emporia Energy] Authenticating..."
 # - "[Emporia Energy] Login successful"
 # - "[Emporia Energy] Discovered X outlets"
@@ -134,7 +134,7 @@ This is where this method shines! After you make changes:
 ssh homebridge
 
 # Pull latest changes
-cd ~/Projects/homebridge-plugin-emporia
+cd ~/Projects/homebridge-emporia
 git pull
 
 # Rebuild and repackage
@@ -143,7 +143,7 @@ npm pack
 
 # Reinstall to Homebridge
 cd /var/lib/homebridge
-sudo npm install ~/Projects/homebridge-plugin-emporia/homebridge-plugin-emporia-1.0.0.tgz
+sudo npm install ~/Projects/homebridge-emporia/homebridge-emporia-1.0.0.tgz
 
 # Restart Homebridge
 sudo systemctl restart homebridge
@@ -166,7 +166,7 @@ sudo journalctl -u homebridge -f
 
 ```bash
 # Create and test a feature branch
-cd ~/Projects/homebridge-plugin-emporia
+cd ~/Projects/homebridge-emporia
 git checkout -b test-feature
 git pull origin test-feature
 npm run build
@@ -174,18 +174,18 @@ npm pack
 
 # Reinstall
 cd /var/lib/homebridge
-sudo npm install ~/Projects/homebridge-plugin-emporia/homebridge-plugin-emporia-1.0.0.tgz
+sudo npm install ~/Projects/homebridge-emporia/homebridge-emporia-1.0.0.tgz
 sudo systemctl restart homebridge
 
 # Switch back to main
-cd ~/Projects/homebridge-plugin-emporia
+cd ~/Projects/homebridge-emporia
 git checkout main
 npm run build
 npm pack
 
 # Reinstall
 cd /var/lib/homebridge
-sudo npm install ~/Projects/homebridge-plugin-emporia/homebridge-plugin-emporia-1.0.0.tgz
+sudo npm install ~/Projects/homebridge-emporia/homebridge-emporia-1.0.0.tgz
 sudo systemctl restart homebridge
 ```
 
@@ -194,13 +194,13 @@ sudo systemctl restart homebridge
 ```bash
 # Remove the plugin
 cd /var/lib/homebridge
-sudo npm uninstall homebridge-plugin-emporia
+sudo npm uninstall homebridge-emporia
 
 # For standard Homebridge (without Config UI X):
-# sudo npm uninstall -g homebridge-plugin-emporia
+# sudo npm uninstall -g homebridge-emporia
 
 # Remove the repository (optional)
-rm -rf ~/Projects/homebridge-plugin-emporia
+rm -rf ~/Projects/homebridge-emporia
 
 # Restart Homebridge
 sudo systemctl restart homebridge
@@ -214,7 +214,7 @@ sudo systemctl restart homebridge
 
 ```bash
 # On your development machine (this one)
-cd /home/stebates/Projects/homebridge-plugin-emporia
+cd /home/stebates/Projects/homebridge-emporia
 
 # Install dependencies and build
 npm install
@@ -223,7 +223,7 @@ npm run build
 # Create a tarball
 npm pack
 
-# This creates: homebridge-plugin-emporia-1.0.0.tgz
+# This creates: homebridge-emporia-1.0.0.tgz
 ```
 
 ### Step 2: Copy to Homebridge Server
@@ -233,10 +233,10 @@ npm pack
 # Assuming your server is configured as 'homebridge' or similar
 
 # Copy the tarball
-scp homebridge-plugin-emporia-1.0.0.tgz homebridge:~/
+scp homebridge-emporia-1.0.0.tgz homebridge:~/
 
 # Or if direct IP/hostname:
-# scp homebridge-plugin-emporia-1.0.0.tgz user@192.168.1.x:~/
+# scp homebridge-emporia-1.0.0.tgz user@192.168.1.x:~/
 ```
 
 ### Step 3: Install on Homebridge Server
@@ -247,18 +247,18 @@ ssh homebridge
 
 # For Homebridge Config UI X (most common):
 cd /var/lib/homebridge
-sudo npm install ~/homebridge-plugin-emporia-1.0.0.tgz
+sudo npm install ~/homebridge-emporia-1.0.0.tgz
 
 # Verify installation
 ls -la /var/lib/homebridge/node_modules/ | grep emporia
 
 # For standard Homebridge (without Config UI X):
-# sudo npm install -g ~/homebridge-plugin-emporia-1.0.0.tgz
+# sudo npm install -g ~/homebridge-emporia-1.0.0.tgz
 
 # Or if Homebridge runs in Docker:
-# docker cp homebridge-plugin-emporia-1.0.0.tgz homebridge:/tmp/
+# docker cp homebridge-emporia-1.0.0.tgz homebridge:/tmp/
 # docker exec homebridge sh -c \
-#   "cd /var/lib/homebridge && npm install /tmp/homebridge-plugin-emporia-1.0.0.tgz"
+#   "cd /var/lib/homebridge && npm install /tmp/homebridge-emporia-1.0.0.tgz"
 ```
 
 ### Step 4: Configure the Plugin
@@ -342,7 +342,7 @@ them immediately.
 ### Step 1: Build Locally
 
 ```bash
-cd /home/stebates/Projects/homebridge-plugin-emporia
+cd /home/stebates/Projects/homebridge-emporia
 npm install
 npm run build
 ```
@@ -354,7 +354,7 @@ npm run build
 sudo npm link
 
 # Verify it worked
-npm list -g homebridge-plugin-emporia
+npm list -g homebridge-emporia
 ```
 
 ### Step 3: Configure and Restart
@@ -379,7 +379,7 @@ sudo systemctl restart homebridge
 
 ```bash
 # Remove the global link
-sudo npm unlink -g homebridge-plugin-emporia
+sudo npm unlink -g homebridge-emporia
 ```
 
 ---
@@ -411,7 +411,7 @@ sudo journalctl -u homebridge | grep Emporia
 
 You should see:
 ```
-[Emporia Energy] Loaded homebridge-plugin-emporia v1.0.0
+[Emporia Energy] Loaded homebridge-emporia v1.0.0
 [Emporia Energy] Finished initializing platform: EmporiaEnergy
 ```
 
@@ -474,16 +474,16 @@ ls -la /var/lib/homebridge/node_modules/ | grep emporia
 
 # Reinstall if needed
 cd /var/lib/homebridge
-sudo npm uninstall homebridge-plugin-emporia
-sudo npm install ~/homebridge-plugin-emporia-1.0.0.tgz
+sudo npm uninstall homebridge-emporia
+sudo npm install ~/homebridge-emporia-1.0.0.tgz
 
 # For standard Homebridge:
 # Check plugin is installed globally
-npm list -g | grep homebridge-plugin-emporia
+npm list -g | grep homebridge-emporia
 
 # Reinstall if needed
-sudo npm uninstall -g homebridge-plugin-emporia
-sudo npm install -g ~/homebridge-plugin-emporia-1.0.0.tgz
+sudo npm uninstall -g homebridge-emporia
+sudo npm install -g ~/homebridge-emporia-1.0.0.tgz
 ```
 
 ### Authentication Failing
@@ -601,7 +601,7 @@ When you make changes:
 
 ```bash
 # 1. Build new version
-cd /home/stebates/Projects/homebridge-plugin-emporia
+cd /home/stebates/Projects/homebridge-emporia
 npm run build
 npm version patch  # Bumps to 1.0.1
 
@@ -609,11 +609,11 @@ npm version patch  # Bumps to 1.0.1
 npm pack
 
 # 3. Copy to server
-scp homebridge-plugin-emporia-1.0.1.tgz homebridge:~/
+scp homebridge-emporia-1.0.1.tgz homebridge:~/
 
 # 4. Install update
 ssh homebridge
-sudo npm install -g ~/homebridge-plugin-emporia-1.0.1.tgz
+sudo npm install -g ~/homebridge-emporia-1.0.1.tgz
 
 # 5. Restart
 sudo systemctl restart homebridge
@@ -631,10 +631,10 @@ sudo journalctl -u homebridge -f
 ssh homebridge
 
 # Uninstall current version
-sudo npm uninstall -g homebridge-plugin-emporia
+sudo npm uninstall -g homebridge-emporia
 
 # Reinstall previous version
-sudo npm install -g ~/homebridge-plugin-emporia-1.0.0.tgz
+sudo npm install -g ~/homebridge-emporia-1.0.0.tgz
 
 # Restart
 sudo systemctl restart homebridge
@@ -725,10 +725,10 @@ chmod 600 ~/.homebridge/emporia-tokens.json
 npm run build && npm pack
 
 # Copy to server
-scp homebridge-plugin-emporia-*.tgz homebridge:~/
+scp homebridge-emporia-*.tgz homebridge:~/
 
 # Install on server
-ssh homebridge "sudo npm install -g ~/homebridge-plugin-emporia-*.tgz"
+ssh homebridge "sudo npm install -g ~/homebridge-emporia-*.tgz"
 
 # Restart Homebridge
 ssh homebridge "sudo systemctl restart homebridge"
