@@ -1,7 +1,7 @@
 {
   "name": "homebridge-emporia",
   "displayName": "Homebridge Emporia Energy",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Homebridge plugin for Emporia Vue energy monitoring devices including smart outlets and EV chargers",
   "main": "dist/index.js",
   "type": "module",

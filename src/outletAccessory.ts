@@ -6,6 +6,7 @@ import type {
 
 import type { EmporiaEnergyPlatform } from './platform.js';
 import type { EmporiaOutlet } from './emporiaApi.js';
+import { registerEveOptional } from './eveCharacteristics.js';
 
 /**
  * Emporia Outlet Accessory
@@ -62,16 +63,21 @@ export class EmporiaOutletAccessory {
       .getCharacteristic(this.platform.Characteristic.OutletInUse)
       .onGet(this.getOutletInUse.bind(this));
 
-    // Add energy monitoring if enabled
-    if (this.platform.config.exposeEnergyMonitoring !== false) {
-      // Note: HomeKit doesn't have native power consumption characteristics
-      // These would require Eve HomeKit types or custom characteristics
-      // For now we'll log the values and they can be added via 
-      // homebridge-lib later
-      this.platform.log.debug(
-        'Energy monitoring enabled for outlet:',
-        accessory.displayName,
-      );
+    // Add energy monitoring if enabled.
+    //
+    // HomeKit has no characteristic for electrical power, so these are
+    // Eve's. Eve, Controller for HomeKit and Home+ show them; Apple's Home
+    // app does not, and cannot be made to.
+    if (this.platform.config.exposeEnergyMonitoring === true) {
+      registerEveOptional(this.outletService, this.platform.eve);
+
+      this.outletService
+        .getCharacteristic(this.platform.eve.CurrentConsumption)
+        .onGet(() => this.currentPower);
+
+      this.outletService
+        .getCharacteristic(this.platform.eve.TotalConsumption)
+        .onGet(() => this.totalConsumption);
     }
 
     // Initialize current state
@@ -120,46 +126,34 @@ export class EmporiaOutletAccessory {
           this.currentState,
         );
 
-        // Update energy data if monitoring is enabled
-        // Note: Energy monitoring is only available for Vue energy monitor devices,
-        // not for smart outlets
+        // Read power from the platform's shared cache, which refreshes
+        // every device in one request rather than one request each.
         if (this.platform.config.exposeEnergyMonitoring === true) {
-          try {
-            const usage = await this.platform
-              .getApi()
-              .getDeviceUsage(device.deviceGid);
+          const watts = this.platform.getPower(device.deviceGid);
+          if (watts !== undefined) {
+            this.currentPower = watts;
+            // kWh accumulated since start: watts over one poll interval.
+            const intervalHours =
+              ((this.platform.config.updateInterval || 60) * 1000) / 3600000;
+            this.totalConsumption += (watts / 1000) * intervalHours;
 
-            if (usage.deviceListUsages?.devices?.[0]?.channelUsages) {
-              const deviceUsage = usage.deviceListUsages.devices[0];
-              const channelUsages = deviceUsage.channelUsages;
-              if (channelUsages.length > 0) {
-                // Usage is in kWh for the time period
-                // Convert to instantaneous power (watts)
-                const usageKwh = channelUsages[0].usage || 0;
-                // Assuming 1 minute intervals, multiply by 60 to get hourly rate
-                this.currentPower = usageKwh * 60 * 1000; // Convert to watts
-                this.totalConsumption += usageKwh;
-              }
-            }
-
-            if (this.currentPower > 0 || this.totalConsumption > 0) {
-              if (this.platform.config.debug) {
-                this.platform.log.debug(
-                  `${this.accessory.displayName} - Power: 
-                    ${this.currentPower.toFixed(1)}W, 
-                    Total: ${this.totalConsumption.toFixed(3)}kWh`,
-                );
-              }
-            }
-          } catch (error) {
-            // Energy data may not be available for all devices
-            if (this.platform.config.debug) {
-              this.platform.log.debug(
-                `Could not fetch energy data for ${this.accessory.displayName}`,
-              );
-            }
+            this.outletService.updateCharacteristic(
+              this.platform.eve.CurrentConsumption,
+              this.currentPower,
+            );
+            this.outletService.updateCharacteristic(
+              this.platform.eve.TotalConsumption,
+              this.totalConsumption,
+            );
           }
         }
+
+        // OutletInUse is derived from power, so it only became meaningful
+        // once the shared cache above started populating currentPower.
+        this.outletService.updateCharacteristic(
+          this.platform.Characteristic.OutletInUse,
+          this.currentState && this.currentPower > 0,
+        );
 
         this.lastUpdate = Date.now();
       }

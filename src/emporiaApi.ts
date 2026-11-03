@@ -97,6 +97,9 @@ export class EmporiaApi {
   private cognitoUser: CognitoUser | null = null;
   private username: string | null = null;
 
+  /** gid -> Emporia device name, refreshed at discovery. */
+  private readonly deviceNames = new Map<number, string>();
+
   constructor(private readonly log: Logging) {
     this.client = axios.create({
       baseURL: this.baseUrl,
@@ -221,7 +224,10 @@ export class EmporiaApi {
       const response = await this.client.get('/customers/devices', {
         headers: { authtoken: this.tokens?.idToken },
       });
-      return response.data.customerDevices || [];
+      // The payload key is "devices". This read "customerDevices" and so
+      // had always returned [] -- which is why every outlet fell back to
+      // "Emporia Outlet <gid>" despite the name being fetched here.
+      return response.data.devices || [];
     } catch (error) {
       this.log.error('Failed to fetch devices:', error);
       throw error;
@@ -250,7 +256,40 @@ export class EmporiaApi {
   }
 
   /**
-   * Get outlets
+   * Refresh the gid -> device name map.
+   *
+   * /customers/devices/status returns outlets carrying only deviceGid,
+   * outletOn and loadGid -- no name. The name lives on /customers/devices
+   * as locationProperties.deviceName, so the two have to be joined or
+   * every outlet falls back to "Emporia Outlet <gid>".
+   *
+   * Outlets are usually nested under their parent device, hence the walk.
+   */
+  async refreshDeviceNames(): Promise<void> {
+    const walk = (list: EmporiaDevice[]): void => {
+      for (const device of list) {
+        const name = device.locationProperties?.deviceName;
+        if (name) {
+          this.deviceNames.set(device.deviceGid, name);
+        }
+        if (device.devices?.length) {
+          walk(device.devices);
+        }
+      }
+    };
+
+    const devices = await this.getDevices();
+    this.deviceNames.clear();
+    walk(devices);
+    this.log.debug(`Cached ${this.deviceNames.size} device name(s)`);
+  }
+
+  /**
+   * Get outlets, with their Emporia device names attached.
+   *
+   * Names come from the cache rather than a second request, because this
+   * is on the polling path and the names change far more rarely than the
+   * state does.
    */
   async getOutlets(): Promise<EmporiaOutlet[]> {
     try {
@@ -258,11 +297,54 @@ export class EmporiaApi {
       const response = await this.client.get('/customers/devices/status', {
         headers: { authtoken: this.tokens?.idToken },
       });
-      return response.data.outlets || [];
+      const outlets: EmporiaOutlet[] = response.data.outlets || [];
+      return outlets.map((outlet) => {
+        const deviceName = this.deviceNames.get(outlet.deviceGid);
+        if (!deviceName || outlet.locationProperties?.deviceName) {
+          return outlet;
+        }
+        return { ...outlet, locationProperties: { deviceName } };
+      });
     } catch (error) {
       this.log.error('Failed to fetch outlets:', error);
       throw error;
     }
+  }
+
+  /**
+   * Instantaneous power for several devices in one request.
+   *
+   * The per-accessory path used to call getDeviceUsage() once per outlet
+   * per poll -- eight requests every 30s here. The API takes a comma
+   * separated deviceGids, so one request covers the lot, which is what
+   * emvue-exporter does too.
+   *
+   * Returns watts keyed by deviceGid. A 1MIN scale in KilowattHours is
+   * energy for that minute, so watts = kWh * 1000 * 60.
+   */
+  async getPowerByGid(gids: number[]): Promise<Map<number, number>> {
+    const power = new Map<number, number>();
+    if (gids.length === 0) {
+      return power;
+    }
+
+    const url = 'AppAPI?apiMethod=getDeviceListUsages' +
+      `&deviceGids=${gids.join(',')}` +
+      `&instant=${encodeURIComponent(new Date().toISOString())}` +
+      '&scale=1MIN&energyUnit=KilowattHours';
+
+    const response = await this.client.get(url, {
+      headers: { authtoken: this.tokens?.idToken },
+    });
+
+    const devices = response.data?.deviceListUsages?.devices ?? [];
+    for (const device of devices) {
+      const usage = device.channelUsages?.[0]?.usage;
+      if (typeof usage === 'number') {
+        power.set(device.deviceGid, usage * 1000 * 60);
+      }
+    }
+    return power;
   }
 
   /**
