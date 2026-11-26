@@ -25,6 +25,30 @@ export interface EmporiaTokens {
   expiresAt: number;
 }
 
+/**
+ * A login failure. `credentialsRejected` is true only when Cognito says the
+ * username or password is wrong, as opposed to a lockout or a network
+ * error, because that is the one case retrying cannot fix.
+ */
+export class EmporiaAuthError extends Error {
+  constructor(
+    message: string,
+    public readonly credentialsRejected: boolean,
+  ) {
+    super(message);
+    this.name = 'EmporiaAuthError';
+  }
+}
+
+/** What /customers/devices knows about a device, keyed by gid. */
+export interface EmporiaDeviceInfo {
+  name?: string;
+  /** The hex serial number the Emporia app shows. */
+  manufacturerDeviceId?: string;
+  model?: string;
+  firmware?: string;
+}
+
 export interface EmporiaDevice {
   deviceGid: number;
   manufacturerDeviceId: string;
@@ -97,8 +121,11 @@ export class EmporiaApi {
   private cognitoUser: CognitoUser | null = null;
   private username: string | null = null;
 
-  /** gid -> Emporia device name, refreshed at discovery. */
-  private readonly deviceNames = new Map<number, string>();
+  /** gid -> Emporia device details, refreshed at discovery. */
+  private readonly deviceInfo = new Map<number, EmporiaDeviceInfo>();
+
+  /** Called whenever the tokens change, so the caller can persist them. */
+  public onTokensChanged?: (tokens: EmporiaTokens) => void;
 
   constructor(private readonly log: Logging) {
     this.client = axios.create({
@@ -169,7 +196,16 @@ export class EmporiaApi {
           },
           onFailure: (err) => {
             this.log.error('Cognito authentication failed:', err.message);
-            reject(new Error(`Authentication failed: ${err.message}`));
+            // A lockout is also NotAuthorizedException, but it clears on
+            // its own, so only a plain rejection counts as bad credentials.
+            const credentialsRejected =
+              err.code === 'UserNotFoundException' ||
+              (err.code === 'NotAuthorizedException' &&
+                !/attempts exceeded/i.test(err.message));
+            reject(new EmporiaAuthError(
+              `Authentication failed: ${err.message}`,
+              credentialsRejected,
+            ));
           },
         });
       });
@@ -209,6 +245,7 @@ export class EmporiaApi {
 
           this.client.defaults.headers.common.authtoken = this.tokens.idToken;
           this.log.debug('Access token refreshed successfully');
+          this.onTokensChanged?.(this.tokens);
           resolve();
         },
       );
@@ -256,22 +293,24 @@ export class EmporiaApi {
   }
 
   /**
-   * Refresh the gid -> device name map.
+   * Refresh the gid -> device details map.
    *
    * /customers/devices/status returns outlets carrying only deviceGid,
-   * outletOn and loadGid -- no name. The name lives on /customers/devices
-   * as locationProperties.deviceName, so the two have to be joined or
-   * every outlet falls back to "Emporia Outlet <gid>".
+   * outletOn and loadGid. The name, the serial number the Emporia app
+   * shows, the model and the firmware live on /customers/devices, so the
+   * two have to be joined.
    *
    * Outlets are usually nested under their parent device, hence the walk.
    */
-  async refreshDeviceNames(): Promise<void> {
+  async refreshDeviceInfo(): Promise<void> {
     const walk = (list: EmporiaDevice[]): void => {
       for (const device of list) {
-        const name = device.locationProperties?.deviceName;
-        if (name) {
-          this.deviceNames.set(device.deviceGid, name);
-        }
+        this.deviceInfo.set(device.deviceGid, {
+          name: device.locationProperties?.deviceName,
+          manufacturerDeviceId: device.manufacturerDeviceId,
+          model: device.model,
+          firmware: device.firmware,
+        });
         if (device.devices?.length) {
           walk(device.devices);
         }
@@ -279,9 +318,16 @@ export class EmporiaApi {
     };
 
     const devices = await this.getDevices();
-    this.deviceNames.clear();
+    this.deviceInfo.clear();
     walk(devices);
-    this.log.debug(`Cached ${this.deviceNames.size} device name(s)`);
+    this.log.debug(`Cached details for ${this.deviceInfo.size} device(s)`);
+  }
+
+  /**
+   * Details for one device, or undefined if discovery has not seen it.
+   */
+  getDeviceInfo(deviceGid: number): EmporiaDeviceInfo | undefined {
+    return this.deviceInfo.get(deviceGid);
   }
 
   /**
@@ -299,7 +345,7 @@ export class EmporiaApi {
       });
       const outlets: EmporiaOutlet[] = response.data.outlets || [];
       return outlets.map((outlet) => {
-        const deviceName = this.deviceNames.get(outlet.deviceGid);
+        const deviceName = this.deviceInfo.get(outlet.deviceGid)?.name;
         if (!deviceName || outlet.locationProperties?.deviceName) {
           return outlet;
         }
@@ -488,6 +534,20 @@ export class EmporiaApi {
         Username: this.username,
         Pool: userPool,
       });
+    }
+  }
+
+  /**
+   * Resume a saved session without the password.
+   *
+   * The ID token only lives an hour, so after almost any restart the saved
+   * one is stale. The refresh token is not, and using it keeps a restart
+   * from depending on the configured password.
+   */
+  async restoreSession(tokens: EmporiaTokens, username: string): Promise<void> {
+    this.setTokens(tokens, username);
+    if (tokens.expiresAt <= Date.now() + 60000) {
+      await this.refreshAccessToken();
     }
   }
 

@@ -7,6 +7,34 @@ https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](
 https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-11-25
+
+### Added
+- Device overrides can be keyed by `serialNumber`, the hex serial the
+  Emporia app shows, as well as by `deviceGid`. `deviceGid` is no longer
+  required.
+- Discovery logs one line per device with its serial number, GID and
+  Emporia name, so any of the three can be matched to the others.
+
+### Changed
+- **The HomeKit Serial Number is now the Emporia serial number**, not the
+  decimal device GID, so a tile in Home can be matched to a device in the
+  Emporia app. Model and firmware come from Emporia too.
+- A changed name is now also written to the accessory's own `Name` and to
+  `ConfiguredName`, which is what Home reads. This happens once per name
+  change, so a rename made in Home is not overwritten on restart. On the
+  first start after upgrading it applies the configured name once.
+
+### Fixed
+- **A wrong password was retried every 60 seconds forever**, which locks
+  the Emporia account. A rejected username or password now stops with a
+  clear error; other failures back off from one minute up to one hour.
+- Every restart needed the password. Saved tokens were only written at
+  password login and discarded once the one-hour ID token expired. The
+  saved refresh token is now used on startup and tokens are saved after
+  each refresh, with mode `0600`.
+- Power polling ran, and logged a stack trace, while not logged in.
+
 ## [1.2.0] - 2026-11-02
 
 ### Added

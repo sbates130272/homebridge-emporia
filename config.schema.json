@@ -62,10 +62,15 @@
         "items": {
           "type": "object",
           "properties": {
+            "serialNumber": {
+              "title": "Serial Number",
+              "type": "string",
+              "description": "The device serial number as shown in the Emporia app"
+            },
             "deviceGid": {
               "title": "Device ID (GID)",
               "type": "integer",
-              "description": "The device GID from Emporia (visible in logs)"
+              "description": "Alternative to the serial number: the device GID (visible in logs)"
             },
             "name": {
               "title": "Custom Name",
@@ -78,10 +83,7 @@
               "default": false,
               "description": "Hide this device from HomeKit"
             }
-          },
-          "required": [
-            "deviceGid"
-          ]
+          }
         }
       }
     },
@@ -134,7 +136,7 @@
       "title": "Device Customization",
       "expandable": true,
       "expanded": false,
-      "description": "Customize individual devices by their Device ID (GID). Device IDs are shown in Homebridge logs when devices are discovered.",
+      "description": "Customize individual devices by the serial number shown in the Emporia app, or by Device ID (GID). Both are shown in the Homebridge log when devices are discovered.",
       "items": [
         {
           "key": "devices",
@@ -142,6 +144,7 @@
           "orderable": false,
           "buttonText": "Add Device Override",
           "items": [
+            "devices[].serialNumber",
             "devices[].deviceGid",
             "devices[].name",
             "devices[].hide"
