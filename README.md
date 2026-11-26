@@ -106,15 +106,16 @@ configuration. This allows you to:
   rooms in HomeKit
 - **Hide specific devices** that you don't want exposed to HomeKit
 
-To customize a device, you need its **Device ID (GID)**, which is displayed
-in Homebridge logs when devices are discovered:
+Identify a device by its **serial number**, the long hex value the
+Emporia app shows for it. The same value is published as the Serial
+Number of the accessory in HomeKit, and is logged when devices are
+discovered:
 
 ```
-[Emporia Energy] Discovered 3 outlet(s)
-[Emporia Energy] Adding new outlet: Emporia Outlet 123456
+[Emporia Energy] Outlet "Living Room Lamp": serial A2107A04B4AC67B2B5F8, GID 123456, Emporia name "plug-a"
 ```
 
-In this example, the Device ID is `123456`.
+The numeric `deviceGid` from that line is accepted as an alternative.
 
 #### Example: Custom Names and Hidden Devices
 
@@ -128,7 +129,7 @@ In this example, the Device ID is `123456`.
       "password": "your-password",
       "devices": [
         {
-          "deviceGid": 123456,
+          "serialNumber": "A2107A04B4AC67B2B5F8",
           "name": "Living Room Lamp"
         },
         {
@@ -147,7 +148,7 @@ In this example, the Device ID is `123456`.
 ```
 
 In this example:
-- Device `123456` will appear as "Living Room Lamp" (easier to assign to
+- Device `A2107A04B4AC67B2B5F8` will appear as "Living Room Lamp" (easier to assign to
   Living Room in Home app)
 - Device `789012` will appear as "Garage Freezer"
 - Device `345678` will be hidden and not appear in HomeKit at all

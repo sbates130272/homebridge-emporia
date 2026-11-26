@@ -15,12 +15,14 @@ import {
   createEveCharacteristics,
   type EveCharacteristics,
 } from './eveCharacteristics.js';
-import { EmporiaApi, EmporiaTokens } from './emporiaApi.js';
+import { EmporiaApi, EmporiaAuthError, EmporiaTokens } from './emporiaApi.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
 export interface DeviceConfig {
-  deviceGid: number;
+  /** The hex serial number the Emporia app shows. */
+  serialNumber?: string;
+  deviceGid?: number;
   name?: string;
   hide?: boolean;
 }
@@ -54,6 +56,10 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
   private updateInterval?: NodeJS.Timeout;
   private readonly tokensFile: string;
 
+  /** False until discovery succeeds, so polling never runs unauthenticated. */
+  private ready = false;
+  private authRetryMs = 60000;
+
   /** Shared instantaneous power, gid -> watts. Filled by updateAllDevices. */
   private powerByGid = new Map<number, number>();
 
@@ -71,6 +77,7 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
 
     // Initialize Emporia API client
     this.api = new EmporiaApi(log);
+    this.api.onTokensChanged = (tokens) => this.saveTokens(tokens);
 
     // Path for storing tokens
     this.tokensFile = path.join(
@@ -121,44 +128,72 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
    */
   private async authenticateAndDiscoverDevices(): Promise<void> {
     try {
-      // Try to load saved tokens
-      let authenticated = false;
-      if (fs.existsSync(this.tokensFile)) {
-        try {
-          const tokensData = fs.readFileSync(this.tokensFile, 'utf-8');
-          const tokens: EmporiaTokens = JSON.parse(tokensData);
-          if (tokens.expiresAt > Date.now()) {
-            this.api.setTokens(tokens, this.config.username);
-            authenticated = true;
-            this.log.info('Loaded saved authentication tokens');
-          }
-        } catch (error) {
-          this.log.warn('Failed to load saved tokens:', error);
-        }
-      }
-
-      // Authenticate if needed
-      if (!authenticated) {
+      if (!(await this.restoreSavedSession())) {
         this.log.info('Authenticating with Emporia API...');
-        const tokens = await this.api.login(
+        this.saveTokens(await this.api.login(
           this.config.username,
           this.config.password,
-        );
-        // Save tokens
-        fs.writeFileSync(this.tokensFile, JSON.stringify(tokens, null, 2));
+        ));
       }
 
-      // Names first: discoverDevices() reads them off the outlets.
-      await this.api.refreshDeviceNames();
+      // Details first: discoverDevices() reads names and serials from them.
+      await this.api.refreshDeviceInfo();
 
-      // Discover devices
       await this.discoverDevices();
+      this.ready = true;
+      this.authRetryMs = 60000;
     } catch (error) {
-      this.log.error('Failed to authenticate or discover devices:', error);
-      // Retry after 60 seconds
+      if (error instanceof EmporiaAuthError && error.credentialsRejected) {
+        // Retrying a rejected password locks the Emporia account, for this
+        // plugin and for everything else that logs in to it.
+        this.log.error(
+          'Emporia rejected the configured username or password. Not ' +
+          'retrying. Correct them in the plugin settings and restart.',
+        );
+        return;
+      }
+
+      this.log.error(
+        'Failed to authenticate or discover devices; retrying in ' +
+        `${this.authRetryMs / 1000}s:`,
+        error,
+      );
       setTimeout(() => {
         this.authenticateAndDiscoverDevices();
-      }, 60000);
+      }, this.authRetryMs);
+      this.authRetryMs = Math.min(this.authRetryMs * 2, 3600000);
+    }
+  }
+
+  /**
+   * Resume from the saved tokens. Returns false if there are none or
+   * they no longer work, in which case the caller logs in with the password.
+   */
+  private async restoreSavedSession(): Promise<boolean> {
+    if (!fs.existsSync(this.tokensFile)) {
+      return false;
+    }
+    try {
+      const tokens: EmporiaTokens = JSON.parse(
+        fs.readFileSync(this.tokensFile, 'utf-8'),
+      );
+      await this.api.restoreSession(tokens, this.config.username);
+      this.log.info('Resumed saved Emporia session');
+      return true;
+    } catch (error) {
+      this.log.warn('Could not resume saved Emporia session:', error);
+      return false;
+    }
+  }
+
+  private saveTokens(tokens: EmporiaTokens): void {
+    try {
+      fs.writeFileSync(this.tokensFile, JSON.stringify(tokens, null, 2), {
+        mode: 0o600,
+      });
+      fs.chmodSync(this.tokensFile, 0o600);
+    } catch (error) {
+      this.log.warn('Failed to save authentication tokens:', error);
     }
   }
 
@@ -193,6 +228,7 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
           const defaultName = outlet.locationProperties?.deviceName ||
             `Emporia Outlet ${outlet.deviceGid}`;
           const name = this.getDeviceName(outlet.deviceGid, defaultName);
+          this.logIdentity('Outlet', outlet.deviceGid, name);
 
           const existingAccessory = this.accessories.get(uuid);
 
@@ -208,8 +244,8 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
               existingAccessory._associatedHAPAccessory.displayName = name;
             }
             existingAccessory.context.device = outlet;
-            this.homebridgeApi.updatePlatformAccessories([existingAccessory]);
             new EmporiaOutletAccessory(this, existingAccessory);
+            this.homebridgeApi.updatePlatformAccessories([existingAccessory]);
           } else {
             this.log.info('Adding new outlet:', name);
 
@@ -252,6 +288,7 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
           // Get custom or default name
           const defaultName = `Emporia Charger ${charger.deviceGid}`;
           const name = this.getDeviceName(charger.deviceGid, defaultName);
+          this.logIdentity('Charger', charger.deviceGid, name);
 
           const existingAccessory = this.accessories.get(uuid);
 
@@ -267,8 +304,8 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
               existingAccessory._associatedHAPAccessory.displayName = name;
             }
             existingAccessory.context.device = charger;
-            this.homebridgeApi.updatePlatformAccessories([existingAccessory]);
             new EmporiaChargerAccessory(this, existingAccessory);
+            this.homebridgeApi.updatePlatformAccessories([existingAccessory]);
           } else {
             this.log.info('Adding new EV charger:', name);
 
@@ -320,7 +357,7 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
    * meant eight requests per cycle for data a single request returns.
    */
   private async updateAllDevices(): Promise<void> {
-    if (this.config.exposeEnergyMonitoring !== true) {
+    if (!this.ready || this.config.exposeEnergyMonitoring !== true) {
       return;
     }
 
@@ -354,10 +391,76 @@ export class EmporiaEnergyPlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Get device configuration by device GID
+   * Publish a device's identity to HomeKit.
+   *
+   * The serial number is the one the Emporia app shows, so a tile in Home
+   * can be matched to a device there. The gid is only a fallback.
+   */
+  publishIdentity(
+    accessory: PlatformAccessory,
+    service: Service,
+    fallbackModel: string,
+  ): void {
+    const deviceGid = accessory.context.device.deviceGid as number;
+    const info = this.api.getDeviceInfo(deviceGid);
+    const name = accessory.displayName;
+
+    const information = accessory
+      .getService(this.Service.AccessoryInformation)!
+      .setCharacteristic(this.Characteristic.Manufacturer, 'Emporia Energy')
+      .setCharacteristic(
+        this.Characteristic.Model,
+        info?.model || fallbackModel,
+      )
+      .setCharacteristic(
+        this.Characteristic.SerialNumber,
+        info?.manufacturerDeviceId || deviceGid.toString(),
+      );
+
+    // HomeKit only accepts x, x.y or x.y.z here.
+    if (info?.firmware && /^\d+(\.\d+){0,2}$/.test(info.firmware)) {
+      information.setCharacteristic(
+        this.Characteristic.FirmwareRevision,
+        info.firmware,
+      );
+    }
+
+    service.setCharacteristic(this.Characteristic.Name, name);
+
+    // Only when the name changes: Home writes a rename made there back to
+    // ConfiguredName, and setting it on every start would undo that.
+    if (accessory.context.publishedName !== name) {
+      information.setCharacteristic(this.Characteristic.Name, name);
+      service.addOptionalCharacteristic(this.Characteristic.ConfiguredName);
+      service.setCharacteristic(this.Characteristic.ConfiguredName, name);
+      accessory.context.publishedName = name;
+    }
+  }
+
+  /**
+   * One line per device tying together every identifier it goes by.
+   */
+  private logIdentity(kind: string, deviceGid: number, name: string): void {
+    const info = this.api.getDeviceInfo(deviceGid);
+    this.log.info(
+      `${kind} "${name}": serial ${info?.manufacturerDeviceId ?? 'unknown'}, ` +
+      `GID ${deviceGid}, Emporia name "${info?.name ?? 'unknown'}"`,
+    );
+  }
+
+  /**
+   * Get device configuration, matched by serial number or by GID
    */
   private getDeviceConfig(deviceGid: number): DeviceConfig | undefined {
-    return this.config.devices?.find((d) => d.deviceGid === deviceGid);
+    const serial = this.api
+      .getDeviceInfo(deviceGid)
+      ?.manufacturerDeviceId?.toLowerCase();
+    return this.config.devices?.find(
+      (d) =>
+        d.deviceGid === deviceGid ||
+        (serial !== undefined &&
+          d.serialNumber?.trim().toLowerCase() === serial),
+    );
   }
 
   /**

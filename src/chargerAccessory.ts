@@ -30,29 +30,12 @@ export class EmporiaChargerAccessory {
   ) {
     const device = accessory.context.device as EmporiaCharger;
 
-    // Set accessory information
-    this.accessory
-      .getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(
-        this.platform.Characteristic.Manufacturer,
-        'Emporia Energy',
-      )
-      .setCharacteristic(this.platform.Characteristic.Model, 'EV Charger')
-      .setCharacteristic(
-        this.platform.Characteristic.SerialNumber,
-        device.deviceGid.toString(),
-      );
-
     // Get or create the Switch service (representing the charger on/off)
     this.switchService =
       this.accessory.getService(this.platform.Service.Switch) ||
       this.accessory.addService(this.platform.Service.Switch);
 
-    // Set the service name
-    this.switchService.setCharacteristic(
-      this.platform.Characteristic.Name,
-      accessory.displayName,
-    );
+    this.platform.publishIdentity(accessory, this.switchService, 'EV Charger');
 
     // Register handlers for On/Off characteristic
     this.switchService

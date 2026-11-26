@@ -28,29 +28,12 @@ export class EmporiaOutletAccessory {
   ) {
     const device = accessory.context.device as EmporiaOutlet;
 
-    // Set accessory information
-    this.accessory
-      .getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(
-        this.platform.Characteristic.Manufacturer,
-        'Emporia Energy',
-      )
-      .setCharacteristic(this.platform.Characteristic.Model, 'Smart Outlet')
-      .setCharacteristic(
-        this.platform.Characteristic.SerialNumber,
-        device.deviceGid.toString(),
-      );
-
     // Get or create the Outlet service
     this.outletService =
       this.accessory.getService(this.platform.Service.Outlet) ||
       this.accessory.addService(this.platform.Service.Outlet);
 
-    // Set the service name
-    this.outletService.setCharacteristic(
-      this.platform.Characteristic.Name,
-      accessory.displayName,
-    );
+    this.platform.publishIdentity(accessory, this.outletService, 'Smart Outlet');
 
     // Register handlers for On/Off characteristic
     this.outletService
